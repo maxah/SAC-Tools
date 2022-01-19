@@ -1,0 +1,12 @@
+{
+    "name": "SAC-Tools",
+    "version": "1.0.0",
+    "keywords": ["util", "functional", "server", "client", "browser"],
+    "author": "maxah",
+    "contributors": [],
+    "dependencies": {
+	"words-count": "2.0.2",
+	"underscore": "1.13.2",
+	"filehound": "1.17.5"
+    }
+}
