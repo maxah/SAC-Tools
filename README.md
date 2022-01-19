@@ -8,7 +8,7 @@ Implemented features:
 - finding obsolete translations in the documentation pages for each language.
 
 Installation:
-Place the application in a folder next to the Superalgos folder.
+Place the application in the folder next to the Superalgos folder and install the modules with the 'npm install' command.
 
 ![image](https://user-images.githubusercontent.com/2537958/150162294-2917e7b1-40dd-444a-ac84-a80a1fd829a9.png)
 
