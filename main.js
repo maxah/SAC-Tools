@@ -40,7 +40,7 @@ process.argv.forEach((arg, i) => {
 		switch(str) {
 			case '-h':
 			case '--help':
-				if (i > 1) console.log('Usage: node main [options] \n\nOptions:\n [-v, --verbose]: \t\t Verbose output\n [-w, --recount-words]:\t\t Counting the number of words in documents\n [-o, --check-outdated]:\t Output the outdated pages in the documents\n [-e, --empty-pages]:\t\t Pages with incomplete or blank content\n [    --check-translations=...]\t Pages with missing or incomplete translations to the selected language ([it] or Italian, [fr] or French, etc.).\n\t\t\t\t For example: node main --check-translations=en or node main --check-translations=Russian (Not case sensitive)');
+				if (i > 1) console.log('Usage: node main [options] \n\nOptions:\n [-v, --verbose]: \t\t Verbose output\n [-w, --recount-words]:\t\t Counting the number of words in documents\n [-o, --check-outdated]:\t Output the outdated pages in the documents\n [-e, --empty-pages]:\t\t Pages with incomplete or blank content\n [    --check-translations=...]\t Pages with missing or incomplete translations to the selected language ([it] or Italian, [fr] or French, etc.).\n\t\t\t\t For example: node main --check-translations=ru or node main --check-translations=Russian (Not case sensitive)');
 				process.exit();
 				break;
 				
