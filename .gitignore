@@ -2,7 +2,7 @@
 /nbproject
 
 # Package Files #
-/node-modules
+/node-modules/
 
 # Text & Log Files #
 *.txt
