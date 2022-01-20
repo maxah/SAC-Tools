@@ -114,149 +114,149 @@ FileHound.create()
 	Promise.all(Projects).then((groups) => {
 		groups  = _.reject(groups, function (elem) { return !elem.length;});
 		groups.forEach((group, gi) => {
-					group.forEach((file, fi) => {
-						let arr = file.split('\\'), project = arr[3], category, type, block, translated = true;
-						let isBlock;
-						
-						switch (arr[5]) {
-							case 'Docs-Nodes':
-								category = 'Node';
-								break;
-								
-							case 'Docs-Concepts':
-								category = 'Concept';
-								break;
-								
-							case 'Docs-Topics':
-								category = 'Topic';
-								break;
-								
-							case 'Docs-Tutorials':
-								category = 'Tutorial';
-								break;
-								
-							case 'Docs-Reviews':
-								category = 'Review';
-								break;
-								
-							case 'Docs-Books':
-								category = 'Book';
-								break;
-								
-							default: 
-								console.warn(`No category is assigned for --> ${arr[5]}`);
-								break;
+				group.forEach((file, fi) => {
+					let arr = file.split('\\'), project = arr[3], category, type, block, translated = true;
+					let isBlock;
+
+					switch (arr[5]) {
+						case 'Docs-Nodes':
+							category = 'Node';
+							break;
+
+						case 'Docs-Concepts':
+							category = 'Concept';
+							break;
+
+						case 'Docs-Topics':
+							category = 'Topic';
+							break;
+
+						case 'Docs-Tutorials':
+							category = 'Tutorial';
+							break;
+
+						case 'Docs-Reviews':
+							category = 'Review';
+							break;
+
+						case 'Docs-Books':
+							category = 'Book';
+							break;
+
+						default: 
+							console.warn(`No category is assigned for --> ${arr[5]}`);
+							break;
+					}
+
+					try {
+						let type, topic;
+						let obj = JSON.parse(fs.readFileSync(file));
+
+						type = obj.type;
+
+						if (_.has(obj, 'topic')) {
+							topic = obj.topic;
 						}
-						
-						try {
-							let type, topic;
-							let obj = JSON.parse(fs.readFileSync(file));
-							
-							type = obj.type;
-							
-							if (_.has(obj, 'topic')) {
-								topic = obj.topic;
-							}
-											
-							if (_.has(obj, 'definition')) { 
-								if (!_.has(Schema, project)) { Schema[project] = {}; }
-								if (!_.has(Schema[project], category)) { Schema[project][category]= {}; }
-								if (!_.has(Schema[project][category], type)) { Schema[project][category][type] = {}; } 
-									
-								Schema[project][category][type]['Definition'] = obj.definition;
-								if (check_outdated && obj.definition.updated && obj.definition.translations) {
-									let update_time = obj.definition.updated;
-									obj.definition.translations.forEach(item => {
-										if (update_time > item.updated) {
-											if (!_.has(Outdated, item.language)) Outdated[item.language] = [];
-											if (!_.contains(Outdated[item.language], file)) Outdated[item.language].push(file);
-										}
-									});
-								}
-								
-								if (empty_pages && (obj.definition.text.startsWith('Write the definition for this Node') 
-										  || obj.definition.text.startsWith('Right click to edit')
-										  || obj.definition.text.startsWith('Right click and Edit')
-										  || obj.definition.text.startsWith('Right click and select')
-										  || obj.definition.text.length === 0)) {
-									Empty_pages.push(file);
-								}
-								
-								if (check_translations) {
-									if (obj.definition.translations && translated) {
-										translated = _.some(obj.definition.translations, function (item) { return item.language = lang; });
-									} else translated = false;
-								}
-							}
-							
-							if (_.has(obj, 'paragraphs')) { 
-								let paragraphs = obj.paragraphs;
-								paragraphs.forEach(p => {								
-									switch (p.style) {
-										case 'Block':
-											isBlock = true;
-											block = p.text;
-											break;
-											
-										case 'Summary':
-										case 'Text':
-											if (empty_pages && (p.text.startsWith('Right click and Edit')
-													  || p.text.startsWith('Right click and select'))) { Empty_pages.push(file);}
-										case 'Title':
-										case 'Subtitle':
-										case 'List':
-										case 'Table':
-										case 'Success':
-										case 'Note':
-										case 'Important':
-										case 'Callout':
-											if (check_outdated && p.updated && p.translations) {
-												let update_time = p.updated;
-												p.translations.forEach(item => {
-													if (update_time > item.updated) {
-														if (!_.has(Outdated, item.language)) Outdated[item.language] = [];
-														if (!_.contains(Outdated[item.language], file)) Outdated[item.language].push(file);
-													}
-												});
-											}
-											break;
-											
-											if (check_translations) {
-												if (p.translations && translated) {
-													translated = _.some(p.translations, function (item) { return item.language = lang;});
-												} else translated = false;
-											}
-											
-										case 'Include':								
-											let includeText = p.text;
-											
-											if (_.has(Blocks, includeText)) {} else {
-												Blocks[includeText] = { name: includeText, wordCount: 0 };
-											}
-											break;
+
+						if (_.has(obj, 'definition')) { 
+							if (!_.has(Schema, project)) { Schema[project] = {}; }
+							if (!_.has(Schema[project], category)) { Schema[project][category]= {}; }
+							if (!_.has(Schema[project][category], type)) { Schema[project][category][type] = {}; } 
+
+							Schema[project][category][type]['Definition'] = obj.definition;
+							if (check_outdated && obj.definition.updated && obj.definition.translations) {
+								let update_time = obj.definition.updated;
+								obj.definition.translations.forEach(item => {
+									if (update_time > item.updated) {
+										if (!_.has(Outdated, item.language)) Outdated[item.language] = [];
+										if (!_.contains(Outdated[item.language], file)) Outdated[item.language].push(file);
 									}
-									
-									if (isBlock && category) { 
-										if (!_.has(Schema, project)) { Schema[project] = {}; }
-										if (!_.has(Schema[project], category)) { Schema[project][category] = {}; }
-										if (!_.has(Schema[project][category], type)) { Schema[project][category][type] = {}; } 
-										if (!_.has(Schema[project][category][type], block)) { Schema[project][category][type][block] = []; } 
-										if (!Array.isArray(Schema[project][category][type][block])) { console.log(`${project}->${category}->${type}->${block}`); }
-										Schema[project][category][type][block].push(p);
-										//console.log(Schema[project][category][type][block]);
-										//console.log(`${project}->${category}->${type}->${block}`);
-									} 
 								});
 							}
-						} catch (err) {
-							console.log(err);
-							return;
+
+							if (empty_pages && (obj.definition.text.startsWith('Write the definition for this Node') 
+									  || obj.definition.text.startsWith('Right click to edit')
+									  || obj.definition.text.startsWith('Right click and Edit')
+									  || obj.definition.text.startsWith('Right click and select')
+									  || obj.definition.text.length === 0)) {
+								Empty_pages.push(file);
+							}
+
+							if (check_translations) {
+								if (obj.definition.translations && translated) {
+									translated = _.some(obj.definition.translations, function (item) { return item.language = lang; });
+								} else translated = false;
+							}
 						}
-						
-						if (check_translations && !translated) No_translation.push(file); 
-						if (gi === (groups.length - 1) && fi === (group.length - 1)) { setTimeout(() => { parser_events.emit('end', groups);}, 3000 );}
-					});
+
+						if (_.has(obj, 'paragraphs')) { 
+							let paragraphs = obj.paragraphs;
+							paragraphs.forEach(p => {								
+								switch (p.style) {
+									case 'Block':
+										isBlock = true;
+										block = p.text;
+										break;
+
+									case 'Summary':
+									case 'Text':
+										if (empty_pages && (p.text.startsWith('Right click and Edit')
+												  || p.text.startsWith('Right click and select'))) { Empty_pages.push(file);}
+									case 'Title':
+									case 'Subtitle':
+									case 'List':
+									case 'Table':
+									case 'Success':
+									case 'Note':
+									case 'Important':
+									case 'Callout':
+										if (check_outdated && p.updated && p.translations) {
+											let update_time = p.updated;
+											p.translations.forEach(item => {
+												if (update_time > item.updated) {
+													if (!_.has(Outdated, item.language)) Outdated[item.language] = [];
+													if (!_.contains(Outdated[item.language], file)) Outdated[item.language].push(file);
+												}
+											});
+										}
+										break;
+
+										if (check_translations) {
+											if (p.translations && translated) {
+												translated = _.some(p.translations, function (item) { return item.language = lang;});
+											} else translated = false;
+										}
+
+									case 'Include':								
+										let includeText = p.text;
+
+										if (_.has(Blocks, includeText)) {} else {
+											Blocks[includeText] = { name: includeText, wordCount: 0 };
+										}
+										break;
+								}
+
+								if (isBlock && category) { 
+									if (!_.has(Schema, project)) { Schema[project] = {}; }
+									if (!_.has(Schema[project], category)) { Schema[project][category] = {}; }
+									if (!_.has(Schema[project][category], type)) { Schema[project][category][type] = {}; } 
+									if (!_.has(Schema[project][category][type], block)) { Schema[project][category][type][block] = []; } 
+									if (!Array.isArray(Schema[project][category][type][block])) { console.log(`${project}->${category}->${type}->${block}`); }
+									Schema[project][category][type][block].push(p);
+									//console.log(Schema[project][category][type][block]);
+									//console.log(`${project}->${category}->${type}->${block}`);
+								} 
+							});
+						}
+					} catch (err) {
+						console.log(err);
+						return;
+					}
+
+					if (check_translations && !translated) No_translation.push(file); 
+					if (gi === (groups.length - 1) && fi === (group.length - 1)) { setTimeout(() => { parser_events.emit('end', groups);}, 3000 );}
 				});
+			});
 		});
 	});	
 	
