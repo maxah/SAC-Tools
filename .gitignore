@@ -1,0 +1,10 @@
+# NetBeans specific #
+/nbproject
+
+# Package Files #
+/node-modules
+
+# Text & Log Files #
+*.txt
+*.log
+/package-lock.json

@@ -4,8 +4,10 @@ Superalgos Contributor Tools
   Since the Superalgos project, at the moment, does not have some built-in tools for calculating the volume of contributions, some useful tools are implemented separately in this repository. At the moment this tool is aimed at the translation team. The functionality will be expanded as needed. 
 
 Implemented features:
-- word count in documents, books and tutorials.
-- finding obsolete translations in the documentation pages for each language.
+- Word count in documents, books and tutorials
+- Finding obsolete translations in the documentation pages for each language
+- Finding pages with incomplete content or definition
+- Search for pages with incomplete translation in the selected language
 
 Installation:
 Place the application in the folder next to the Superalgos folder and install the modules with the 'npm install' command.
@@ -14,5 +16,6 @@ Place the application in the folder next to the Superalgos folder and install th
 
 Usage:
 This is a console application. All commands can be viewed by calling the help by typing 'node main -h'.
+For convenience, you can output the results to a file by redirecting the output. For example: node -v -w > wordcount.log
 
 

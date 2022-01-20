@@ -5,6 +5,7 @@
     "author": "maxah",
     "contributors": [],
     "dependencies": {
+	"iso-639-1": "2.1.11",
 	"words-count": "2.0.2",
 	"underscore": "1.13.2",
 	"filehound": "1.17.5"
