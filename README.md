@@ -1,7 +1,7 @@
 # SAC-Tools
 Superalgos Contributor Tools
 
-  Since the Superalgos project, at the moment, does not have some built-in tools for calculating the volume of contributions, some useful tools are implemented separately in this repository. At the moment this tool is aimed at the translation team. The functionality will be expanded as needed. 
+  Since the Superalgos project, at the moment, does not have some built-in tools for calculating the volume of contributions and some statistics on the documents, some useful tools are implemented separately in this repository. At the moment this tool is aimed at the translation team and for those who work with documents. The functionality will be expanded as needed. 
 
 Implemented features:
 - Word count in documents, books and tutorials
