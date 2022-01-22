@@ -9,6 +9,7 @@ Implemented features:
 - Finding obsolete translations in the documentation pages for each language
 - Finding pages with incomplete content or definition
 - Search for pages with incomplete translation in the selected language
+- Displaying the date and time of changes made to translations into the selected language and the name of the editor for each file
 
 Installation:
 -----------------
