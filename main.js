@@ -10,6 +10,7 @@ const FileHound = require('filehound');
 const wordsCount = require('words-count').default;
 const ISO6391 = require('iso-639-1');
 const fs = require('fs');
+const cmd = require('node-cmd');
 const _ = require('underscore');
 const EventEmitter = require('events');
 
@@ -30,7 +31,10 @@ var recount_words = false;
 var check_outdated = false;
 var empty_pages = false;
 var check_translations = false;
-var lang, lang_name;
+var translation_commiter = false;
+var lang, lang_name, regexp;
+
+const basedir = '../Superalgos';
 
 process.argv.forEach((arg, i) => {
 	let str = arg.split('=')[0];
@@ -40,7 +44,16 @@ process.argv.forEach((arg, i) => {
 		switch(str) {
 			case '-h':
 			case '--help':
-				if (i > 1) console.log('Usage: node main [options] \n\nOptions:\n [-v, --verbose]: \t\t Verbose output\n [-w, --recount-words]:\t\t Counting the number of words in documents\n [-o, --check-outdated]:\t Output the outdated pages in the documents\n [-e, --empty-pages]:\t\t Pages with incomplete or blank content\n [    --check-translations=...]\t Pages with missing or incomplete translations to the selected language ([it] or Italian, [fr] or French, etc.).\n\t\t\t\t For example: node main --check-translations=ru or node main --check-translations=Russian (Not case sensitive)');
+				if (i > 1) { 
+					console.log('Usage: node main [options] \n\nOptions:\n[-v, --verbose]: \t\t Verbose output');
+					console.log('[-w, --recount-words]:\t\t Counting the number of words in documents');
+					console.log('[-o, --check-outdated]:\t\t Output the outdated pages in the documents');
+					console.log('[-e, --empty-pages]:\t\t Pages with incomplete or blank content');
+					console.log('[    --check-translations=...]\t Pages with missing or incomplete translations to the selected language ([it] or Italian, [fr] or French, etc.)');
+					console.log('\t\t\t\t For example: node main --check-translations=ru or node main --check-translations=Russian (Not case sensitive)');
+					console.log('[    --translation-commiter=...] Displaying the date and time of changes made to translations into the selected language and the name of the editor for each file');															
+					console.log('\t\t\t\t For example: node main --translation-commiter=ru or node main --translation-commiter=Russian (Not case sensitive)');
+				}
 				process.exit();
 				break;
 				
@@ -64,9 +77,11 @@ process.argv.forEach((arg, i) => {
 				empty_pages = true;
 				break;
 				
-			//case '-t':
-			case '--check-translations':
+			//case '-c':
+			case '--translation-commiter':
+				if (_.last(arg.split('=')) === '') { console.warn(`Enter the code or language name according to ISO-639-1`); process.exit(); }
 				let L = _.last(arg.split('=')), Ll = L[0].toUpperCase().concat(L.slice(1).toLowerCase()), l = L.toLowerCase(), valid, name, code;
+				
 				valid = ISO6391.validate(l);
 				name = (ISO6391.getName(l).length) ? ISO6391.getName(l) : false;
 				code = (ISO6391.getCode(Ll).length) ? ISO6391.getCode(Ll) : false;
@@ -79,8 +94,32 @@ process.argv.forEach((arg, i) => {
 					else if (code) { lang_name = Ll; lang = ISO6391.getCode(Ll).toUpperCase();}
 					else if (name) { lang_name = name; lang = ISO6391.getCode(name).toUpperCase();}
 					
-					check_translations = true;
-					//console.log (lang_name, lang);	
+					translation_commiter = true;
+					regexp = new RegExp(`"language": "${lang}"`);
+					//console.log (lang_name, lang, regexp);	
+				}
+				break;
+				
+			//case '-t':
+			case '--check-translations':
+				if (!lang && !lang_name) {
+					if (_.last(arg.split('=')) === '') { console.warn(`Enter the code or language name according to ISO-639-1`); process.exit(); }
+					let L = _.last(arg.split('=')), Ll = L[0].toUpperCase().concat(L.slice(1).toLowerCase()), l = L.toLowerCase(), valid, name, code;
+					valid = ISO6391.validate(l);
+					name = (ISO6391.getName(l).length) ? ISO6391.getName(l) : false;
+					code = (ISO6391.getCode(Ll).length) ? ISO6391.getCode(Ll) : false;
+
+					if (!name && !code) { 
+						if (!name) console.warn(`The language code is not specified by ISO-639-1 to the given native name [${Ll}]`);
+						if (!code) console.warn(`The code [${l}] is not listed in ISO-639-1`);
+					} else  if (valid || code || name) {
+						if (valid) { lang_name = ISO6391.getName(l); lang = l.toUpperCase();}
+						else if (code) { lang_name = Ll; lang = ISO6391.getCode(Ll).toUpperCase();}
+						else if (name) { lang_name = name; lang = ISO6391.getCode(name).toUpperCase();}
+
+						check_translations = true;
+						//console.log (lang_name, lang);	
+					}
 				}
 				break;
 				
@@ -91,7 +130,7 @@ process.argv.forEach((arg, i) => {
 	}
 });
 
-if (!recount_words && !check_outdated && !check_translations && !empty_pages) { console.log("No assignments. Use '-h' for help"); process.exit();}
+if (!recount_words && !check_outdated && !check_translations && !empty_pages && !translation_commiter) { console.log("No assignments. Use '-h' for help"); process.exit();}
 
 console.log('Contributable Projects for Translations:');
 FileHound.create()
@@ -103,17 +142,18 @@ FileHound.create()
 	.then(directories => {
 		console.log();
 		directories.forEach((directory) => {
-			Projects.push(FileHound.create()
-				.path(directory)
-				.discard('App-Schema')
-				.ext('json')
-				.find()
+			Projects.push(
+				FileHound.create()
+					.path(directory)
+					.discard('App-Schema')
+					.ext('json')
+					.find()
 			);	
 		});		  
 	
-	Promise.all(Projects).then((groups) => {
-		groups  = _.reject(groups, function (elem) { return !elem.length;});
-		groups.forEach((group, gi) => {
+		Promise.all(Projects).then((groups) => {
+			groups  = _.reject(groups, function (elem) { return !elem.length;});
+			groups.forEach((group, gi) => {
 				group.forEach((file, fi) => {
 					let arr = file.split('\\'), project = arr[3], category, type, block, translated = true;
 					let isBlock;
@@ -264,9 +304,25 @@ parser_events.on('end', (groups) => {
 	groups.forEach((group) => {
 		group.forEach(file => {
 			try {
-				if (recount_words) console.log(file);
+				if (recount_words || translation_commiter) console.log(file);
 				let words_count = 0, type, topic, definition;
 				let obj = JSON.parse(fs.readFileSync(file));
+
+				if (translation_commiter) {
+					let f = file.split('\\').slice(2).join('/');
+					let git_cmd = cmd.runSync(`cd ${basedir} && git blame ${f}`);
+					if (git_cmd.err) { console.log(`Sync err: ${git_cmd.err}`);};
+					if (git_cmd.stderr) { console.log(`Sync stderr: ${git_cmd.stderr}`);};
+					if (git_cmd.data) {
+						let data = git_cmd.data, text = data.split('\n');
+						text.forEach(line  => {
+							if  (regexp.test(line)) {
+								console.log(line.split('(').pop().split(')').shift());
+							}
+						});
+
+					}
+				}
 
 				type = obj.type;
 

@@ -8,4 +8,5 @@ node-modules/
 *.txt
 *.log
 .package-lock.json
+.test.js
 
