@@ -1,12 +1,12 @@
 # NetBeans specific #
-nbproject
+nbproject/
 
 # Package Files #
-node-modules/
+node-modules
 
 # Text & Log Files #
 *.txt
 *.log
 .package-lock.json
-.test.js
+test.js
 
