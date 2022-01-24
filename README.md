@@ -22,4 +22,4 @@ Usage:
 This is a console application. All commands can be viewed by calling the help by typing 'node main -h'.
 
 >Note:
->For convenience and to avoid screen buffer overflow, it is better to output the results to a file by redirecting the output. For example: node -v -w > wordcount.log
+>For convenience and to avoid screen buffer overflow, it is better to output the results to a file by redirecting the output. For example: node main -v -w > wordcount.log
