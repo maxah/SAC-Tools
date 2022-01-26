@@ -16,10 +16,10 @@ Installation:
 -----------------
 Place the application in the folder next to the Superalgos folder and install the modules with the 'npm install' command.
 
+![image](https://user-images.githubusercontent.com/2537958/150162294-2917e7b1-40dd-444a-ac84-a80a1fd829a9.png)
+
 >Note:
 >Tests were done on Windows, on \*nix systems some commands may not work. Let me know about the problems, I will try to fix it.
-
-![image](https://user-images.githubusercontent.com/2537958/150162294-2917e7b1-40dd-444a-ac84-a80a1fd829a9.png)
 
 Usage:
 ----------
