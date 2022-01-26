@@ -44,6 +44,7 @@ const basedir = '../Superalgos';
 const date = new Date();
 var m = date.getMonth() + 1;
 var month = (m < 10) ? ('0' + m) : m;
+var month = month.toString();
 var day = date.getDate().toString();
 var year = date.getFullYear().toString();
 
@@ -139,8 +140,8 @@ process.argv.forEach((arg, i) => {
 				break;
 				
 			case '-n':
-				begin = { d: '01', m: month, y: year }; begin_ts = Date.parse(begin);
-				end = { d: day, m: month, y: year }; end_ts = Date.parse(end);
+				begin = { d: '01', m: month, y: year }; begin_ts = Date.parse(`${year}-${month}-${begin.d}`);
+				end = { d: day, m: month, y: year }; end_ts = Date.parse(`${year}-${month}-${day}`);
 				new_pages = true;
 				break;
 				
