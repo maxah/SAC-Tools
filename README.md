@@ -10,6 +10,7 @@ Implemented features:
 - Finding pages with incomplete content or definition
 - Search for pages with incomplete translation in the selected language
 - Displaying the date and time of changes made to translations into the selected language and the name of the editor for each file
+- Displays a list of new pages added to the documentation for the specified period
 
 Installation:
 -----------------
@@ -22,4 +23,6 @@ Usage:
 This is a console application. All commands can be viewed by calling the help by typing 'node main -h'.
 
 >Note:
->For convenience and to avoid screen buffer overflow, it is better to output the results to a file by redirecting the output. For example: node main -v -w > wordcount.log
+>For convenience and to avoid screen buffer overflow, it is better to output the results to a file by redirecting the output. For example: node main -v -w > wordcount.log.
+>
+>Tests were done on Windows, on \*nix systems some commands may not work. Let me know about the problems, I will try to fix it.
