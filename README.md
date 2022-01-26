@@ -16,6 +16,9 @@ Installation:
 -----------------
 Place the application in the folder next to the Superalgos folder and install the modules with the 'npm install' command.
 
+>Note:
+>Tests were done on Windows, on \*nix systems some commands may not work. Let me know about the problems, I will try to fix it.
+
 ![image](https://user-images.githubusercontent.com/2537958/150162294-2917e7b1-40dd-444a-ac84-a80a1fd829a9.png)
 
 Usage:
@@ -24,5 +27,3 @@ This is a console application. All commands can be viewed by calling the help by
 
 >Note:
 >For convenience and to avoid screen buffer overflow, it is better to output the results to a file by redirecting the output. For example: node main -v -w > wordcount.log.
->
->Tests were done on Windows, on \*nix systems some commands may not work. Let me know about the problems, I will try to fix it.
