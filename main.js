@@ -12,10 +12,14 @@ const ISO6391 = require('iso-639-1');
 const fs = require('fs');
 const cmd = require('node-cmd');
 const _ = require('underscore');
+const cliProgress = require('cli-progress');
+const colors = require('ansi-colors');
 const EventEmitter = require('events');
 
 class Emitter extends EventEmitter {};
+class Emitter2 extends EventEmitter {};
 const parser_events = new Emitter();
+const tasks_events = new Emitter2();
 
 var Directories = [];
 var Projects = [];
@@ -32,9 +36,16 @@ var check_outdated = false;
 var empty_pages = false;
 var check_translations = false;
 var translation_commiter = false;
-var lang, lang_name, regexp;
+var new_pages = false;
+var lang, lang_name, regexp, begin, end, begin_ts, end_ts;
 
 const basedir = '../Superalgos';
+
+const date = new Date();
+var m = date.getMonth() + 1;
+var month = (m < 10) ? ('0' + m) : m;
+var day = date.getDate().toString();
+var year = date.getFullYear().toString();
 
 process.argv.forEach((arg, i) => {
 	let str = arg.split('=')[0];
@@ -53,7 +64,11 @@ process.argv.forEach((arg, i) => {
 					console.log('\t\t\t\t For example: node main --check-translations=ru or node main --check-translations=Russian (Not case sensitive)');
 					console.log('[    --translation-commiter=...] Displaying the date and time of changes made to translations into the selected language and the name of the editor for each file');															
 					console.log('\t\t\t\t For example: node main --translation-commiter=ru or node main --translation-commiter=Russian (Not case sensitive)');
-				}
+					console.log('[-n, --new-pages=[begin:end]]\t Display a list of new pages added to the documentation for the current month or for the period from [begin] to [end].');			
+					console.log('[    --new-pages=[begin]]\t If [end] is not specified, then up to the present.The date format is "YYYY-MM-DD".');
+					console.log('\t\t\t\t Without parameters it is displayed for the current month.');
+					console.log('\t\t\t\t Examples: node main --new-pages=2021.01.01:2022.01.07, node main --new-pages=2022.01.01');
+				}												 
 				process.exit();
 				break;
 				
@@ -123,6 +138,28 @@ process.argv.forEach((arg, i) => {
 				}
 				break;
 				
+			case '-n':
+				begin = { d: '01', m: month, y: year }; begin_ts = Date.parse(begin);
+				end = { d: day, m: month, y: year }; end_ts = Date.parse(end);
+				new_pages = true;
+				break;
+				
+			case '--new-pages':
+				let a = _.last(arg.split('=')), [ b, e ] =  a.split(':');
+				
+				if (b) {
+					let [ y, m , d] = b.split('-');
+					if(d && m && y) { begin = { d: '01', m: m, y: y }; begin_ts = Date.parse(b);} 
+					else { console.log('The [begin] date format is not followed.'); process.exit();}
+				} else { console.log(`The mandatory parameter [begin] is not specified`); process.exit();}
+				
+				if (e) {
+					let [y, m, d] = e.split('-');
+					if(d && m && y) { end = { d: d, m: m, y: y }; end_ts = Date.parse(e);}  else { console.log('The [end] date format is not followed.'); process.exit();}
+				} else { end = { d: day, m: month, y: year };  end_ts = Date.now();};
+				new_pages = true;
+				break;
+				
 			default:
 				console.log(`Invalid argument[${i - 1}]: ${arg}`);
 				break;
@@ -130,7 +167,15 @@ process.argv.forEach((arg, i) => {
 	}
 });
 
-if (!recount_words && !check_outdated && !check_translations && !empty_pages && !translation_commiter) { console.log("No assignments. Use '-h' for help"); process.exit();}
+if (!recount_words && !check_outdated && !check_translations && !empty_pages && !translation_commiter && !new_pages) 
+	{ console.log("No assignments. Use '-h' for help"); process.exit();}
+
+const bar = new cliProgress.SingleBar({
+		format: 'Progress [' + colors.cyan('{bar}') + '] {percentage}% | {value}/{total} | {file}',
+		barCompleteChar: '\u2588',
+		barIncompleteChar: '\u2591',
+		hideCursor: true
+	});
 
 console.log('Contributable Projects for Translations:');
 FileHound.create()
@@ -301,29 +346,39 @@ FileHound.create()
 	});	
 	
 parser_events.on('end', (groups) => {
-	groups.forEach((group) => {
-		group.forEach(file => {
+	if (new_pages) { let len = 0; _.each(groups, function (a) { len += a.length;}); bar.start(len, 0); bar.update({ file: ''});}
+	groups.forEach((group, gi) => {
+		group.forEach((file, fi) => {
 			try {
 				if (recount_words || translation_commiter) console.log(file);
 				let words_count = 0, type, topic, definition;
 				let obj = JSON.parse(fs.readFileSync(file));
 
-				if (translation_commiter) {
-					let f = file.split('\\').slice(2).join('/');
+				if (translation_commiter || new_pages) {
+					let tmp = file.split('\\'), f = tmp.slice(2).join('/'), fno = _.last(tmp), fn = (fno.length > 50) ? '...'.concat(fno.slice(-50)) : _.last(tmp);
 					let git_cmd = cmd.runSync(`cd ${basedir} && git blame ${f}`);
+					
 					if (git_cmd.err) { console.log(`Sync err: ${git_cmd.err}`);};
 					if (git_cmd.stderr) { console.log(`Sync stderr: ${git_cmd.stderr}`);};
 					if (git_cmd.data) {
 						let data = git_cmd.data, text = data.split('\n');
-						text.forEach(line  => {
-							if  (regexp.test(line)) {
-								console.log(line.split('(').pop().split(')').shift());
-							}
-						});
-
+						if (translation_commiter) {
+							text.forEach(line  => {
+								if  (regexp.test(line)) {
+									console.log(line.split('(').pop().split(')').shift());
+								}
+							});
+						}
+						
+						if (new_pages) {
+							let t = _.first(text), ts = Date.parse(t.split('(').pop().split(')').shift().split(' +').shift().slice(-19).split(' ').shift());
+							bar.increment(); bar.update({ file: fn });
+							if (begin_ts <= ts && ts <= end_ts) { Files.push(file);}
+							if (gi === (groups.length - 1) && fi === (group.length - 1)) { setTimeout(() => { tasks_events.emit('complete');}, 3000 );}
+						}
 					}
-				}
-
+				} 
+				
 				type = obj.type;
 
 				if (_.has(obj, 'topic')) {
@@ -407,13 +462,17 @@ parser_events.on('end', (groups) => {
 						console.log(`words: ${words_count}\n`);
 					}
 					words_count_total += words_count;
-				} 				
+				}
 			} catch(err) {
 				console.log(err);
 				return;
 			}
 		});
 	});
+});
+
+tasks_events.on('complete', () => {
+	bar.stop();
 });
 
 process.on('beforeExit', () => {
@@ -442,6 +501,14 @@ process.on('beforeExit', () => {
 		No_translation = _.uniq(No_translation);
 		No_translation.forEach(page => console.log(page));
 		console.log(`Total: ${No_translation.length}`);
+	}
+	
+	if (new_pages) {
+		bar.stop();
+		console.log();
+		console.log(`Pages added from ${begin.d}-${begin.m}-${begin.y} to ${end.d}-${end.m}-${end.y}`);
+		if (Files.length) Files.forEach(page => console.log(page));
+		else console.log('No new pages found');
 	}
 	
 	console.log('\nDone!');
