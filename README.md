@@ -11,6 +11,7 @@ Implemented features:
 - Search for pages with incomplete translation in the selected language
 - Displaying the date and time of changes made to translations into the selected language and the name of the editor for each file
 - Displays a list of new pages added to the documentation for the specified period
+- Create an Excel spreadsheet of the project documents
 
 Installation:
 -----------------

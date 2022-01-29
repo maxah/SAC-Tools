@@ -15,20 +15,26 @@ const _ = require('underscore');
 const cliProgress = require('cli-progress');
 const colors = require('ansi-colors');
 const EventEmitter = require('events');
+const { jsonToExcel, exportJsonToExcel } = require('@papb/json-excel');
 
 class Emitter extends EventEmitter {};
 class Emitter2 extends EventEmitter {};
 const parser_events = new Emitter();
 const tasks_events = new Emitter2();
 
+const linux = (process.platform === 'linux');
+const win32 = (process.platform === 'win32');
+
 var Directories = [];
 var Projects = [];
-var Files = [];
+var newFiles = [];
+var fileGroups = [];
 var Schema = {};
 var Blocks = {};
 var Outdated = {};
 var Empty_pages = [];
 var No_translation = [];
+var xlsx = [];
 var words_count_total = 0;
 var verbose = false;
 var recount_words = false;
@@ -37,9 +43,11 @@ var empty_pages = false;
 var check_translations = false;
 var translation_commiter = false;
 var new_pages = false;
+var xls_table = false;
 var lang, lang_name, regexp, begin, end, begin_ts, end_ts;
 
 const basedir = '../Superalgos';
+const xlsFileName = 'Superalgos-Docs.xlsx';
 
 const date = new Date();
 var m = date.getMonth() + 1;
@@ -69,6 +77,7 @@ process.argv.forEach((arg, i) => {
 					console.log('[    --new-pages=[begin]]\t If [end] is not specified, then up to the present.The date format is "YYYY-MM-DD".');
 					console.log('\t\t\t\t Without parameters it is displayed for the current month.');
 					console.log('\t\t\t\t Examples: node main --new-pages=2021.01.01:2022.01.07, node main --new-pages=2022.01.01');
+					console.log('[-x, --xls-table]\t\t Create an Excel spreadsheet of the project documents');
 				}												 
 				process.exit();
 				break;
@@ -161,6 +170,11 @@ process.argv.forEach((arg, i) => {
 				new_pages = true;
 				break;
 				
+			case '-x':
+			case '--xls-table':
+				xls_table = true; 
+				break;
+				
 			default:
 				console.log(`Invalid argument[${i - 1}]: ${arg}`);
 				break;
@@ -168,7 +182,7 @@ process.argv.forEach((arg, i) => {
 	}
 });
 
-if (!recount_words && !check_outdated && !check_translations && !empty_pages && !translation_commiter && !new_pages) 
+if (!recount_words && !check_outdated && !check_translations && !empty_pages && !translation_commiter && !new_pages && !xls_table) 
 	{ console.log("No assignments. Use '-h' for help"); process.exit();}
 
 const bar = new cliProgress.SingleBar({
@@ -188,7 +202,7 @@ FileHound.create()
 	.then(directories => {
 		console.log();
 		directories.forEach((directory) => {
-			Projects.push(
+			fileGroups.push(
 				FileHound.create()
 					.path(directory)
 					.discard('App-Schema')
@@ -197,14 +211,13 @@ FileHound.create()
 			);	
 		});		  
 	
-		Promise.all(Projects).then((groups) => {
+		Promise.all(fileGroups).then((groups) => {
 			groups  = _.reject(groups, function (elem) { return !elem.length;});
 			groups.forEach((group, gi) => {
 				group.forEach((file, fi) => {
-					let arr = file.split('\\'), project = arr[3], category, type, block, translated = true;
-					let isBlock;
-
-					switch (arr[5]) {
+					let arr = (win32)? file.split('\\') : file.split('/'), project = arr[3], categoryDirName = arr[5], category, block, translated = true, isBlock, file_name = _.last(arr);
+					
+					switch (categoryDirName) {
 						case 'Docs-Nodes':
 							category = 'Node';
 							break;
@@ -233,12 +246,15 @@ FileHound.create()
 							console.warn(`No category is assigned for --> ${arr[5]}`);
 							break;
 					}
+					if (!Projects[project]) Projects[project] = {}; 
+					if (!Projects[project][categoryDirName]) Projects[project][categoryDirName] = { category: category + 's'};
 
 					try {
 						let type, topic;
 						let obj = JSON.parse(fs.readFileSync(file));
 
 						type = obj.type;
+						Projects[project][categoryDirName][file_name] = { type: type };
 
 						if (_.has(obj, 'topic')) {
 							topic = obj.topic;
@@ -352,7 +368,7 @@ parser_events.on('end', (groups) => {
 		group.forEach((file, fi) => {
 			try {
 				if (recount_words || translation_commiter) console.log(file);
-				let words_count = 0, type, topic, definition;
+				let words_count = 0, type, topic, definition, arr = (win32)? file.split('\\') : file.split('/'), categoryDirName = arr[5], file_name = _.last(arr), project = arr[3];
 				let obj = JSON.parse(fs.readFileSync(file));
 
 				if (translation_commiter || new_pages) {
@@ -374,7 +390,7 @@ parser_events.on('end', (groups) => {
 						if (new_pages) {
 							let t = _.first(text), ts = Date.parse(t.split('(').pop().split(')').shift().split(' +').shift().slice(-19).split(' ').shift());
 							bar.increment(); bar.update({ file: fn });
-							if (begin_ts <= ts && ts <= end_ts) { Files.push(file);}
+							if (begin_ts <= ts && ts <= end_ts) { newFiles.push(file);}
 							if (gi === (groups.length - 1) && fi === (group.length - 1)) { setTimeout(() => { tasks_events.emit('complete');}, 3000 );}
 						}
 					}
@@ -462,6 +478,7 @@ parser_events.on('end', (groups) => {
 						if (verbose) console.log(obj);
 						console.log(`words: ${words_count}\n`);
 					}
+					Projects[project][categoryDirName][file_name].wordcount = words_count;
 					words_count_total += words_count;
 				}
 			} catch(err) {
@@ -478,6 +495,7 @@ tasks_events.on('complete', () => {
 
 process.on('beforeExit', () => {
 	//console.log(Schema);
+	//console.log(Projects);
 	if (recount_words) console.log(`Words Total: ${words_count_total}`);
 	if (check_outdated && Object.keys(Outdated).length) {
 		console.log('Pages with outdated translations:');
@@ -508,8 +526,30 @@ process.on('beforeExit', () => {
 		bar.stop();
 		console.log();
 		console.log(`Pages added from ${begin.d}-${begin.m}-${begin.y} to ${end.d}-${end.m}-${end.y}`);
-		if (Files.length) Files.forEach(page => console.log(page));
+		if (newFiles.length) newFiles.forEach(page => console.log(page));
 		else console.log('No new pages found');
+	}
+	
+	if (xls_table) {
+		console.log();
+		for (let project in Projects) {
+			xlsx.push({ sheetName: project.split('-').join(' '), data: [],  formatAsTable: false });
+			for (let category in Projects[project]) {
+				let last = xlsx.length - 1, categories = Projects[project][category], start_of_line;
+				for (let item in categories) {
+					if (item === 'category') xlsx[last].data.push([categories[item], '']); 
+					else xlsx[last].data.push([ categories[item].type, (categories[item].wordcount) ? categories[item].wordcount.toString() : '']);
+				}
+				xlsx[last].data.push(['', '']);
+			}
+		}
+		
+		exportJsonToExcel(xlsFileName, xlsx, { overwrite: true })
+				.then(() => {
+					console.log(`File ${xlsFileName} exported to the main directory`);
+					process.exit();
+				});
+
 	}
 	
 	console.log('\nDone!');
