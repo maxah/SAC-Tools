@@ -18,6 +18,7 @@ node_modules/
 # Other Files #
 *.xls
 *.xlsx
+*.~*
 test.js
 
 # API keys #
