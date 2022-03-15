@@ -48,6 +48,7 @@ var lang, lang_name, regexp, begin, end, begin_ts, end_ts;
 
 const basedir = '../Superalgos';
 const xlsFileName = 'Superalgos-Docs.xlsx';
+const categories = ['Nodes', 'Concepts', 'Topics', 'Tutorials', 'Reviews', 'Books'];
 
 const date = new Date();
 var m = date.getMonth() + 1;
@@ -548,7 +549,7 @@ process.on('beforeExit', () => {
 		for (let project in Projects) {
 			xlsx.push({ sheetName: project.split('-').join(' '), data: [],  formatAsTable: false });
 			for (let category in Projects[project]) {
-				let last = xlsx.length - 1, categories = Projects[project][category], start_of_line;
+				let last = xlsx.length - 1, categories = Projects[project][category];
 				for (let item in categories) {
 					if (item === 'category') xlsx[last].data.push([categories[item], '']); 
 					else xlsx[last].data.push([ categories[item].type, (categories[item].wordcount) ? categories[item].wordcount.toString() : '']);
@@ -557,11 +558,25 @@ process.on('beforeExit', () => {
 			}
 		}
 		
-		exportJsonToExcel(xlsFileName, xlsx, { overwrite: true })
-				.then(() => {
-					console.log(`File ${xlsFileName} exported to the main directory`);
-					process.exit();
-				});
+		exportJsonToExcel(xlsFileName, xlsx, { 
+					overwrite: true,
+					beforeSave(workbook) {
+						let sheets = xlsx.length;
+						xlsx.forEach((sheet, si) => {
+							sheet.data.forEach((cell, ci) => {
+								if (_.contains(categories, workbook.getWorksheet(si + 1).getCell(`A${ci}`).value))
+									workbook.getWorksheet(si + 1).getCell(`A${ci}`).fill = {
+										type : 'pattern',
+										pattern : 'solid',
+										fgColor : { argb : 'F08080' }
+									};
+							});
+						});
+					} 
+			}).then(() => {
+				console.log(`File ${xlsFileName} exported to the main directory`);
+				process.exit();
+			});
 
 	}
 	
