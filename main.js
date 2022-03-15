@@ -76,7 +76,7 @@ process.argv.forEach((arg, i) => {
 					console.log('[-n, --new-pages=[begin:end]]\t Display a list of new pages added to the documentation for the current month or for the period from [begin] to [end].');			
 					console.log('[    --new-pages=[begin]]\t If [end] is not specified, then up to the present.The date format is "YYYY-MM-DD".');
 					console.log('\t\t\t\t Without parameters it is displayed for the current month.');
-					console.log('\t\t\t\t Examples: node main --new-pages=2021.01.01:2022.01.07, node main --new-pages=2022.01.01');
+					console.log('\t\t\t\t Examples: node main --new-pages=2021-01-01:2022-01-07, node main --new-pages=2022-01-01');
 					console.log('[-x, --xls-table]\t\t Create an Excel spreadsheet of the project documents');
 				}												 
 				process.exit();
@@ -159,7 +159,7 @@ process.argv.forEach((arg, i) => {
 				
 				if (b) {
 					let [ y, m , d] = b.split('-');
-					if(d && m && y) { begin = { d: '01', m: m, y: y }; begin_ts = Date.parse(b);} 
+					if(d && m && y) { begin = { d: d, m: m, y: y }; begin_ts = Date.parse(b);} 
 					else { console.log('The [begin] date format is not followed.'); process.exit();}
 				} else { console.log(`The mandatory parameter [begin] is not specified`); process.exit();}
 				
@@ -526,7 +526,20 @@ process.on('beforeExit', () => {
 		bar.stop();
 		console.log();
 		console.log(`Pages added from ${begin.d}-${begin.m}-${begin.y} to ${end.d}-${end.m}-${end.y}`);
-		if (newFiles.length) newFiles.forEach(page => console.log(page));
+
+		if (newFiles.length) newFiles.forEach(file => {
+			let f;
+			console.log(file);
+			
+			if (linux) {
+				f = file.split('/');
+			} else if (win32) {
+				f = file.split('\\');
+			}
+			
+			let p = f[3], c = f[5], fn = _.last(f);
+			console.log(`${p} -> ${c} -> ${ Projects[p][c][fn].type }\n`); 
+		});
 		else console.log('No new pages found');
 	}
 	
