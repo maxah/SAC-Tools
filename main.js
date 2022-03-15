@@ -205,7 +205,7 @@ FileHound.create()
 			fileGroups.push(
 				FileHound.create()
 					.path(directory)
-					.discard('App-Schema')
+					.discard(['App-Schema', 'Utilities'])
 					.ext('json')
 					.find()
 			);	
