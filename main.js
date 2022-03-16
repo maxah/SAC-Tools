@@ -564,7 +564,7 @@ process.on('beforeExit', () => {
 						let sheets = xlsx.length;
 						xlsx.forEach((sheet, si) => {
 							sheet.data.forEach((cell, ci) => {
-								if (_.contains(categories, workbook.getWorksheet(si + 1).getCell(`A${ci}`).value))
+								if (_.contains(categories, workbook.getWorksheet(si + 1).getCell(`A${ci}`).value) && !workbook.getWorksheet(si + 1).getCell(`B${ci}`).value)
 									workbook.getWorksheet(si + 1).getCell(`A${ci}`).fill = {
 										type : 'pattern',
 										pattern : 'solid',
