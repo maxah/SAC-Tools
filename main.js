@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-/* global process */
+/* global process, Promise */
 
 const FileHound = require('filehound');
 const wordsCount = require('words-count').default;
@@ -199,7 +199,7 @@ FileHound.create()
 	.directory()
 	.match('Schemas')
 	.find()
-	.each(dir => { let arr = dir.split('\\'); console.log(`-> ${arr[3]}`);})
+	.each(dir => { let arr = (win32) ? dir.split('\\') : dir.split('/') ; console.log(`-> ${arr[3]}`);})
 	.then(directories => {
 		console.log();
 		directories.forEach((directory) => {
